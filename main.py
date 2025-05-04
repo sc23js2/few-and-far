@@ -3,9 +3,15 @@ import requests
 import json, os
 from collections import defaultdict
 from datetime import datetime
+import matplotlib.pyplot as plt
 
-#base data has 500 supporters on 1 page, and has_more is false
+OUTPUT_DIR = "/workspaces/few-and-far/donation_output"
+
 def fill_supporters(supporter_donations):
+    """
+    Fetchs supporters from the API and fill the supporter_donations dictionary with their details.
+    Must be called before get_donations().
+    """
 
     #given data has one page but this might not always be the case
     page = 1
@@ -27,7 +33,6 @@ def fill_supporters(supporter_donations):
 
             supporter_donations[supporter_id] = {
                 "name": supporter.get("name", "Name?"),
-                "postcode": supporter.get("postcode", "Postcode?"),
                 "created_at": supporter.get("created_at"),
                 "donations": [],
                 "total_donated": 0
@@ -39,10 +44,14 @@ def fill_supporters(supporter_donations):
         else:
             break
 
+    print("Got supporters.")
     return supporter_donations
 
 def get_donations(supporter_donations):
-
+    """
+    Fetches donations from the API and fills the supporter_donations dictionary with their donations.
+    """
+    
     print("Fetching donations ...", end="")
     page = 1
     while True: 
@@ -79,14 +88,6 @@ def get_donations(supporter_donations):
     print("Done.\n")
     return supporter_donations
 
-def save():
-    #insert into csv or json format so you can view the result
-    return 0
-
-def view_save():
-    #if someone has saved then do x
-    return 0
-
 def stats(supporter_donations):
     #Total Donated
     total_donated = sum(supporter["total_donated"] for supporter in supporter_donations.values())
@@ -119,7 +120,58 @@ def stats(supporter_donations):
     oldest_supporter = min(supporter_donations.items(), key=lambda x: x[1]['created_at'])
     print(f"\nOldest Supporter: {oldest_supporter[1]['name']} : Created At: {oldest_supporter[1]['created_at']}")
 
+    #create graph of statistics
+    graphs(supporter_donations, top_10_supporters)
+
     return 0
+
+def graphs(supporter_donations, top_10_supporters):
+    #Bar chart of top 10 supporters
+    names = [supporter["name"] for _, supporter in top_10_supporters]
+    donation_amounts = [supporter["total_donated"] for _, supporter in top_10_supporters]
+
+    plt.figure(figsize=(20, 10))
+    plt.bar(names, donation_amounts, color="royalblue")
+
+    plt.xlabel("Supporters")
+    plt.ylabel("Total Donations (£)")
+    plt.title("Top 10 Supporters by Donation Amount")
+    plt.xticks(rotation=75, ha="right") 
+    plt.savefig(os.path.join(OUTPUT_DIR,"top_10_supporters.png"))
+
+    # Line Chart of Cumulative donations
+    all_donations = []
+    for supporter in supporter_donations.values():
+        for donation in supporter["donations"]:
+            all_donations.append(donation)
+
+    all_donations.sort(key=lambda x: datetime.strptime(x["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ"))
+    amounts = []
+    sum = 0
+    dates = []
+
+    for donation in all_donations:
+        sum += donation["amount"]
+        amounts.append(sum)
+        dates.append(datetime.strptime(donation["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ"))
+
+    plt.figure(figsize=(20, 10))
+    plt.plot(dates, amounts, marker="o", linestyle="-", color="blue")
+    plt.xlabel("Date")
+    plt.ylabel("Total Donations Receivef (£)")
+    plt.title("Cumulative Donation Amount Over Time")
+    plt.xticks(rotation=45)
+    plt.grid(True)
+
+    plt.savefig(os.path.join(OUTPUT_DIR, "all_donations.png"))
+
+    # Pie chart of donations per supporter
+    plt.figure(figsize=(10, 10))
+    plt.pie(donation_amounts, labels=names, autopct="%1.1f%%", startangle=140)
+    plt.axis("equal")
+    plt.title("Donations per Supporter")
+    plt.savefig(os.path.join(OUTPUT_DIR,"supporter_donations.png"))
+
 
 def print_donations(supporter_donations):
     #print to terminal
@@ -129,21 +181,25 @@ def print_donations(supporter_donations):
         for donation in supporter["donations"]:
             print(f".... Donation ID: {donation['id']}, Amount: £{donation['amount']}, Date: {datetime.strptime(donation["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ").strftime('%d/%m/%Y %H:%M')}")
 
+
 def main():
+    """
+    Menu to navigate application
+    """
+    supporter_donations = defaultdict(dict)
+
     print("--- SUPPORTER DONATIONS ---")
     while True:
 
         print("\nPress 1 to create a new export")
         print("Press 2 to view an existing export")
         print("Press 3 to view statistics")
-        print("Press 4 to view graphs")
-        print("Press 5 to exit")
+        print("Press 0 to exit")
 
         choice = input("Enter your choice: ")
         match choice:
             case "1":
                 #initilaise dictionary
-                supporter_donations = defaultdict(dict)
                 supporter_donations = fill_supporters(supporter_donations)
                 supporter_donations = get_donations(supporter_donations)
 
@@ -151,59 +207,41 @@ def main():
                 print_donations(supporter_donations)
 
                 #json dump
-                with open("donation_export.json", "w") as file:
+                with open("donation_output/donation_export.json", "w") as file:
                     json.dump(supporter_donations, file, indent=4)  
 
             case "2":
-                with open("donation_export.json", "r") as file:
+                with open("donation_output/donation_export.json", "r") as file:
                     supporter_donations = json.load(file)
 
-                if supporter_donations:
+                if supporter_donations is not None:
                     print_donations(supporter_donations)
                 else:
                     print("You have no existing export.")
 
             case "3":
-                if supporter_donations:
+                if supporter_donations is not None:
                     stats(supporter_donations)
+                    print("\nGraphs have been generated and saved to the output directory /donation_output")
                 else:
                     print("You have no existing export.")                       
 
-            case "4":
-                if supporter_donations:
-                    print("Graphs not implemented yet.")
-                else:
-                    print("You have no existing export.")
-
-            case "5":
+            case "0":
                 return 0
             
             case _:
                 print("Not an option. Please try again.")
             
 #--- Main -----
-
-#check if the API is available
-url = ENDPOINTS.get_supporters()
-response = requests.get(url)
-if response.status_code != 200:
-    print(f"API Unavailable: {response.status_code}")
-    exit()
-else:
-    main()
-
-#statistics -----
-#Liftime Total Donated 
-#Average Donation Amount
-#Average Donation Amount per Supporter
-#Top 10 Supporters
-#10 Biggest Donations
-#Oldest Supporter
-
-#Graphs -----
-#Pie chart of donations
-#Bar chart of donations
-#Line chart of donations over time
+if __name__ == "__main__":
+    #check if the API is available
+    url = ENDPOINTS.get_supporters()
+    response = requests.get(url)
+    if response.status_code != 200:
+        print(f"API Unavailable: {response.status_code}")
+        exit()
+    else:
+        main()
 
     
 
