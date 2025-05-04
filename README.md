@@ -38,15 +38,16 @@ Run the unit tests in the terminal by navigating to workspaces/few-and-far and t
 If they all pass, you will be prompted with the response 'OK'
 
 ## Tree ##
+run 'tree' in the terminal or see below: 
 .
-├── README.md
-├── __pycache__
-│   └── config.cpython-312.pyc
-├── config.py
-├── donation_output
-│   ├── all_donations.png
-│   ├── donation_export.json
-│   ├── supporter_donations.png
-│   └── top_10_supporters.png
-├── main.py
-└── unit_tests.py
+├── README.md\n
+├── __pycache__\n
+│   └── config.cpython-312.pyc\n
+├── config.py\n
+├── donation_output\n
+│   ├── all_donations.png\n
+│   ├── donation_export.json\n
+│   ├── supporter_donations.png\n
+│   └── top_10_supporters.png\n
+├── main.py\n
+└── unit_tests.py\n
