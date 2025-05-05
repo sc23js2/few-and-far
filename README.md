@@ -1,5 +1,5 @@
-# few-and-far
-### supporter donations developer test ####
+# few-and-far supporter donations developer test #
+
 
 # Brief #
 As the document states, we're not looking for an implementation in any particular language or framework, so please use what you're most comfortable with. The goal is for you to demonstrate your technical ability and problem solving skills. There are no fixed requirements for the code, instead I'm more interested in your decision making and attention to detail.
