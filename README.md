@@ -32,6 +32,8 @@ Option 3 Generates Unique Statistics of the data and outputs them in the console
 ## Usage ##
 NOTE: please be patient when creating a new export, it takes no more than 1 minute.
 
+Install requirements.txt with 'pip install -r requirements.txt' 
+
 Run the program in the termial by navigating to workspaces/few-and-far and then execute the command 'python3 main.py'
 
 Run the unit tests in the terminal by navigating to workspaces/few-and-far and then execute the command 'python3 unit_tests.py'
