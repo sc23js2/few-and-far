@@ -97,28 +97,33 @@ def stats(supporter_donations):
     print(f"\nAverage Donation Amount: £{average_donation}")
 
     #Top 10 Supporters
-    top_10_supporters = sorted(supporter_donations.items(), key=lambda x: x[1]['total_donated'], reverse=True)[:10]
+    top_10_supporters = sorted(supporter_donations.items(), key=lambda x: x[1]["total_donated"], reverse=True)[:10]
     print("\nTop 10 Supporters:")
     for supporter_id, supporter in top_10_supporters:
-        print(f".... {supporter['name']} : Total Donated: £{supporter['total_donated']}")
+        print(f".... {supporter["name"]} - Total Donated: £{supporter["total_donated"]}")
 
     #10 Biggest Donations
-    biggest_donations = []
+    sort_donations = []
     for supporter in supporter_donations.values():
         for donation in supporter["donations"]:
-            biggest_donations.append(donation)
-    biggest_donations = sorted(biggest_donations, key=lambda x: x['amount'], reverse=True)[:10]
+            sort_donations.append({
+                "id": donation["id"],
+                "amount": donation["amount"],
+                "created_at": donation["created_at"]
+            })
+
+    biggest_donations = sorted(sort_donations, key=lambda x: x["amount"], reverse=True)[:10]
     print("\n10 Biggest Donations:")
     for donation in biggest_donations:
-        print(f".... Donation ID: {donation['id']}, Amount: £{donation['amount']}, Date: {donation['created_at']}")
+        print(f".... Donation ID: {donation["id"]} - Amount: £{donation["amount"]}, Date: {datetime.strptime(donation["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ").strftime('%d/%m/%Y %H:%M')}")
 
     #Smallest Donation
-    smallest_donation = min(biggest_donations, key=lambda x: x['amount'])
-    print(f"\nSmallest Donation: {smallest_donation['id']}, Amount: £{smallest_donation['amount']}, Date: {smallest_donation['created_at']}")
+    smallest_donation = min(sort_donations, key=lambda x: x['amount'])
+    print(f"\nSmallest Donation: {smallest_donation["id"]} - Amount: £{smallest_donation["amount"]}, Date: {datetime.strptime(smallest_donation["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ").strftime('%d/%m/%Y %H:%M')}")
 
     #Oldest Supporter
     oldest_supporter = min(supporter_donations.items(), key=lambda x: x[1]['created_at'])
-    print(f"\nOldest Supporter: {oldest_supporter[1]['name']} : Created At: {oldest_supporter[1]['created_at']}")
+    print(f"\nOldest Supporter: {oldest_supporter[1]["name"]} - Created At: {datetime.strptime(oldest_supporter[1]["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ").strftime('%d/%m/%Y %H:%M')}")
 
     #create graph of statistics
     graphs(supporter_donations, top_10_supporters)
@@ -176,10 +181,10 @@ def graphs(supporter_donations, top_10_supporters):
 def print_donations(supporter_donations):
     #print to terminal
     for supporter_id, supporter in supporter_donations.items():
-        print(f"\n{supporter['name']} : Total Donated: £{supporter['total_donated']}")
+        print(f"\n{supporter["name"]} - Total Donated: £{supporter["total_donated"]}")
 
         for donation in supporter["donations"]:
-            print(f".... Donation ID: {donation['id']}, Amount: £{donation['amount']}, Date: {datetime.strptime(donation["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ").strftime('%d/%m/%Y %H:%M')}")
+            print(f".... Donation ID: {donation["id"]} - Amount: £{donation["amount"]}, Date: {datetime.strptime(donation["created_at"], "%Y-%m-%dT%H:%M:%S.%fZ").strftime('%d/%m/%Y %H:%M')}")
 
 
 def main():
@@ -187,6 +192,7 @@ def main():
     Menu to navigate application
     """
     supporter_donations = defaultdict(dict)
+    loaded = False
 
     print("--- SUPPORTER DONATIONS ---")
     while True:
@@ -205,22 +211,25 @@ def main():
 
                 #display donations
                 print_donations(supporter_donations)
+                loaded = True
 
                 #json dump
                 with open("donation_output/donation_export.json", "w") as file:
                     json.dump(supporter_donations, file, indent=4)  
+                print("\nExported to donation_output/donation_export.json")
 
             case "2":
                 with open("donation_output/donation_export.json", "r") as file:
                     supporter_donations = json.load(file)
+                    loaded = True
 
-                if supporter_donations is not None:
+                if loaded:
                     print_donations(supporter_donations)
                 else:
                     print("You have no existing export.")
 
             case "3":
-                if supporter_donations is not None:
+                if loaded:
                     stats(supporter_donations)
                     print("\nGraphs have been generated and saved to the output directory /donation_output")
                 else:
